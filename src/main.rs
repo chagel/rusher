@@ -1,4 +1,6 @@
+use chrono::prelude::*;
 use eval::eval;
+use pad::{Alignment, PadStr};
 use regex::Regex;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -7,7 +9,7 @@ use std::io::prelude::*;
 use std::process::{Command, Stdio};
 
 fn main() {
-    match prompt(&["def", "calc", "rate", "wea"].join("\n")) {
+    match prompt(&["def", "calc", "rate", "wea", "time"].join("\n")) {
         Err(why) => println!("something wrong here: {}", why),
         Ok(msg) => {
             let mut vec = msg.split_whitespace().collect::<Vec<_>>();
@@ -59,6 +61,7 @@ fn start(app: App) -> Result<String, io::Error> {
         "rate" => rate(app),
         "calc" => calculator(app),
         "wea" => weather(app),
+        "time" => timezone(app),
         _ => translate(app),
     }
 }
@@ -99,6 +102,38 @@ fn weather(app: App) -> Result<String, io::Error> {
     let result = output.split("-").collect::<Vec<_>>().join("\n");
     println!("{}", result);
     prompt(&result)
+}
+
+fn timezone(_app: App) -> Result<String, io::Error> {
+    let zones: HashMap<&str, i32> = [
+        ("Otago", 12),
+        ("Tokyo", 9),
+        ("Shanghai", 8),
+        ("Bangkok", 7),
+        ("Vejle", 1),
+        ("Newyork", -4),
+        ("Chicago", -5),
+        ("Cupertino", -7),
+    ]
+    .iter()
+    .cloned()
+    .collect();
+
+    let utc = Utc::now();
+    let result = zones
+        .keys()
+        .map(|city| {
+            format!(
+                "{} | {}",
+                city.pad(10, ' ', Alignment::Right, true),
+                utc.with_timezone(&FixedOffset::east(zones[city] * 3600))
+                    .format("%b %d (%a) %H:%M %p %z")
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    prompt(&result.to_string())
 }
 
 #[derive(Debug)]
