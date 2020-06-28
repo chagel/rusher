@@ -1,12 +1,12 @@
 use chrono::prelude::*;
 use eval::eval;
 use pad::{Alignment, PadStr};
-use regex::Regex;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::io;
 use std::io::prelude::*;
 use std::process::{Command, Stdio};
+use regex::Regex;
 
 fn main() {
     match prompt(&["def", "calc", "rate", "wea", "time"].join("\n")) {
@@ -67,14 +67,12 @@ fn start(app: App) -> Result<String, io::Error> {
 }
 
 fn translate(app: App) -> Result<String, io::Error> {
-    let result = command("sdcv", vec![&app.param1]);
+    let result = command("sdcv", vec!["-jne", &app.param1]);
+    let dict: Vec<Dict> = serde_json::from_str(&result)?;
+    let body = if dict.len() == 0 { "No result :(" } else { &dict[0].definition };
+    
     prompt(
-        &(Regex::new(r"\s\d\s").unwrap()).replace_all(
-            &Regex::new("^-->.*$|^Found.*")
-                .unwrap()
-                .replace_all(&result, ""),
-            "\n",
-        ),
+        &Regex::new(r"\s(\d|\((a|b|c)\))\s").unwrap().replace_all(&body, "\n")
     )
 }
 
@@ -151,4 +149,11 @@ struct ExchangeRate {
     base: String,
     date: String,
     rates: HashMap<String, f32>,
+}
+
+#[derive(Deserialize, Debug)]
+struct Dict {
+    dict: String,
+    word: String,
+    definition: String, 
 }
