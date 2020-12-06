@@ -9,7 +9,7 @@ use std::process::{Command, Stdio};
 use regex::Regex;
 
 fn main() {
-    match prompt(&["def", "calc", "rate", "wea", "time"].join("\n")) {
+    match prompt(&["def", "calc", "rate", "say", "wea", "time"].join("\n")) {
         Err(why) => println!("something wrong here: {}", why),
         Ok(msg) => {
             let mut vec = msg.split_whitespace().collect::<Vec<_>>();
@@ -60,6 +60,7 @@ fn start(app: App) -> Result<String, io::Error> {
         "def" => translate(app),
         "rate" => rate(app),
         "calc" => calculator(app),
+        "say" => say(app),
         "wea" => weather(app),
         "time" => timezone(app),
         _ => translate(app),
@@ -100,6 +101,16 @@ fn weather(app: App) -> Result<String, io::Error> {
     let result = output.split("-").collect::<Vec<_>>().join("\n");
     println!("{}", result);
     prompt(&result)
+}
+
+fn say(app: App) -> Result<String, io::Error> {
+    let output = command(
+        "trans",
+        vec!["-speak", &app.param1, ":zh-CN"],
+    );
+    let result = output.split("-").collect::<Vec<_>>().join("\n");
+    println!("{}", result);
+    Ok(result)
 }
 
 fn timezone(_app: App) -> Result<String, io::Error> {
