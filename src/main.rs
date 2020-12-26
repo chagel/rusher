@@ -9,7 +9,7 @@ use std::process::{Command, Stdio};
 use regex::Regex;
 
 fn main() {
-    match prompt(&["def", "calc", "rate", "say", "wea", "time"].join("\n")) {
+    match prompt(&["# ", "> ", "def", "calc", "rate", "say", "wea", "time"].join("\n")) {
         Err(why) => println!("something wrong here: {}", why),
         Ok(msg) => {
             let mut vec = msg.split_whitespace().collect::<Vec<_>>();
@@ -57,13 +57,15 @@ fn command(name: &str, args: Vec<&str>) -> String {
 
 fn start(app: App) -> Result<String, io::Error> {
     match app.name.as_str() {
-        "def" => translate(app),
+        "def"  => translate(app),
         "rate" => rate(app),
         "calc" => calculator(app),
-        "say" => say(app),
-        "wea" => weather(app),
+        "say"  => say(app),
+        "wea"  => weather(app),
         "time" => timezone(app),
-        _ => translate(app),
+        ">"    => search(app),
+        "#"    => run(app),
+        _      => run(app),
     }
 }
 
@@ -111,6 +113,17 @@ fn say(app: App) -> Result<String, io::Error> {
     let result = output.split("-").collect::<Vec<_>>().join("\n");
     println!("{}", result);
     Ok(result)
+}
+
+fn search(app: App) -> Result<String, io::Error> {
+    Ok(command(
+            "firefox",
+            vec![&format!("https://www.google.com/search?q={}", &app.param1)],
+    ))
+}
+
+fn run(app: App) -> Result<String, io::Error> {
+    Ok(command(&app.param1, vec![&app.param2]))
 }
 
 fn timezone(_app: App) -> Result<String, io::Error> {
